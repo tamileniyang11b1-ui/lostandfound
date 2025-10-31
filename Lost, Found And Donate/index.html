@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>School Lost & Found Portal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: "Poppins", sans-serif;
+      background: linear-gradient(135deg, #89f7fe, #66a6ff);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 20px;
+      text-align: center;
+      width: 350px;
+      box-shadow: 0 0 25px rgba(0,0,0,0.15);
+      animation: fade 0.6s ease;
+    }
+
+    @keyframes fade {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    h1 {
+      color: #333;
+      margin-bottom: 15px;
+    }
+
+    select, input, textarea {
+      width: 90%;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      font-family: "Poppins";
+    }
+
+    button {
+      background: linear-gradient(90deg, #ff6a00, #ee0979);
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 10px;
+      cursor: pointer;
+      width: 95%;
+      font-size: 15px;
+      transition: 0.3s;
+    }
+
+    button:hover { transform: scale(1.05); }
+
+    #message {
+      display: none;
+      background: #d4edda;
+      color: #155724;
+      padding: 10px;
+      border-radius: 8px;
+      margin-top: 15px;
+      animation: fade 0.6s ease;
+    }
+
+    #previewContainer {
+      display: none;
+      margin-top: 10px;
+    }
+
+    #previewImage {
+      width: 80%;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>🎒 Lost & Found + Donation</h1>
+
+    <select id="submissionType" required>
+      <option value="">Select Type</option>
+      <option value="Lost">Lost Item</option>
+      <option value="Found">Found Item</option>
+      <option value="Donation">Donate Item</option>
+    </select>
+
+    <form id="itemForm" style="display:none;">
+      <input type="text" id="itemName" placeholder="Item name" required>
+      <textarea id="description" placeholder="Description" required></textarea>
+      <input type="text" id="finderName" placeholder="Your Name" required>
+      <input type="text" id="admissionNo" placeholder="Admission Number" required>
+      <input type="file" id="imageUpload" accept="image/*" required>
+
+      <div id="previewContainer">
+        <p><b>Image Preview:</b></p>
+        <img id="previewImage" src="" alt="Preview">
+      </div>
+
+      <button type="submit">Submit</button>
+    </form>
+
+    <div id="message">✅ Your item has been submitted successfully!</div>
+  </div>
+
+  <script>
+    const form = document.getElementById("itemForm");
+    const typeSelect = document.getElementById("submissionType");
+    const message = document.getElementById("message");
+    const imageUpload = document.getElementById("imageUpload");
+    const previewContainer = document.getElementById("previewContainer");
+    const previewImage = document.getElementById("previewImage");
+
+    // 🔗 REPLACE with your Google Apps Script Web App URL
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyxQBYTB4QWgQiRuB85_CYGTCYFX1002EUQ0kEa_6IrDpJAvwz6zjG4boxPgzXvAtbaxA/exec";
+
+    typeSelect.addEventListener("change", () => {
+      form.style.display = typeSelect.value ? "block" : "none";
+      message.style.display = "none";
+    });
+
+    imageUpload.addEventListener("change", () => {
+      const file = imageUpload.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = e => {
+          previewImage.src = e.target.result;
+          previewContainer.style.display = "block";
+        };
+        reader.readAsDataURL(file);
+      } else {
+        previewContainer.style.display = "none";
+      }
+    });
+
+    form.addEventListener("submit", e => {
+      e.preventDefault();
+      const file = imageUpload.files[0];
+      const reader = new FileReader();
+
+      reader.onloadend = async () => {
+        const data = {
+          type: typeSelect.value,
+          itemName: document.getElementById("itemName").value,
+          description: document.getElementById("description").value,
+          finderName: document.getElementById("finderName").value,
+          admissionNo: document.getElementById("admissionNo").value,
+          image: reader.result.split(",")[1]
+        };
+
+        await fetch(WEB_APP_URL, {
+          method: "POST",
+          body: JSON.stringify(data)
+        });
+
+        form.reset();
+        previewContainer.style.display = "none";
+        form.style.display = "none";
+        typeSelect.value = "";
+        message.style.display = "block";
+      };
+
+      reader.readAsDataURL(file);
+    });
+  </script>
+</body>
+</html>
