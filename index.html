@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>School Lost, Found & Donation Portal</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>School Lost & Found Portal</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
 
   <style>
@@ -58,9 +58,7 @@
       transition: 0.3s;
     }
 
-    button:hover {
-      transform: scale(1.05);
-    }
+    button:hover { transform: scale(1.05); }
 
     #message {
       display: none;
@@ -71,6 +69,17 @@
       margin-top: 15px;
       animation: fade 0.6s ease;
     }
+
+    #previewContainer {
+      display: none;
+      margin-top: 10px;
+    }
+
+    #previewImage {
+      width: 80%;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
   </style>
 </head>
 
@@ -79,68 +88,85 @@
     <h1>🎒 Lost & Found + Donation</h1>
 
     <select id="submissionType" required>
-      <option value="">Select Submission Type</option>
+      <option value="">Select Type</option>
       <option value="Lost">Lost Item</option>
       <option value="Found">Found Item</option>
       <option value="Donation">Donate Item</option>
     </select>
 
     <form id="itemForm" style="display:none;">
-      <input type="text" id="itemName" placeholder="Name of the item" required>
+      <input type="text" id="itemName" placeholder="Item name" required>
       <textarea id="description" placeholder="Description" required></textarea>
       <input type="text" id="finderName" placeholder="Your Name" required>
       <input type="text" id="admissionNo" placeholder="Admission Number" required>
       <input type="file" id="imageUpload" accept="image/*" required>
+
+      <div id="previewContainer">
+        <p><b>Image Preview:</b></p>
+        <img id="previewImage" src="" alt="Preview">
+      </div>
+
       <button type="submit">Submit</button>
     </form>
 
-    <div id="message">✅ Your item has been noted. Check the store next day!</div>
+    <div id="message">✅ Your item has been submitted successfully!</div>
   </div>
 
   <script>
     const form = document.getElementById("itemForm");
     const typeSelect = document.getElementById("submissionType");
     const message = document.getElementById("message");
+    const imageUpload = document.getElementById("imageUpload");
+    const previewContainer = document.getElementById("previewContainer");
+    const previewImage = document.getElementById("previewImage");
 
-    // 🔗 Paste your Google Apps Script web app URL here
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwHlt81pOM0xgLfoK5lbozn_znSSNgb8Jpckey3V27N0-3J1Yrpj7Lf5sQ5aI6Ksk4N/exec";
+    // 🔗 REPLACE with your Google Apps Script Web App URL
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxajgZfLouJZJwhrD2JDC5d6g8ROAW75QNRumXysSjKcN2a5Lcsq_G23B79ut7U1G1pMg/exec";
 
     typeSelect.addEventListener("change", () => {
       form.style.display = typeSelect.value ? "block" : "none";
       message.style.display = "none";
     });
 
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
+    imageUpload.addEventListener("change", () => {
+      const file = imageUpload.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = e => {
+          previewImage.src = e.target.result;
+          previewContainer.style.display = "block";
+        };
+        reader.readAsDataURL(file);
+      } else {
+        previewContainer.style.display = "none";
+      }
+    });
 
-      const file = document.getElementById("imageUpload").files[0];
+    form.addEventListener("submit", e => {
+      e.preventDefault();
+      const file = imageUpload.files[0];
       const reader = new FileReader();
 
-      reader.onloadend = async function () {
-        const base64 = reader.result.split(",")[1];
+      reader.onloadend = async () => {
         const data = {
           type: typeSelect.value,
           itemName: document.getElementById("itemName").value,
           description: document.getElementById("description").value,
           finderName: document.getElementById("finderName").value,
           admissionNo: document.getElementById("admissionNo").value,
-          image: base64
+          image: reader.result.split(",")[1]
         };
 
-        try {
-          await fetch(WEB_APP_URL, {
-            method: "POST",
-            body: JSON.stringify(data)
-          });
+        await fetch(WEB_APP_URL, {
+          method: "POST",
+          body: JSON.stringify(data)
+        });
 
-          form.reset();
-          form.style.display = "none";
-          typeSelect.value = "";
-          message.style.display = "block";
-        } catch (error) {
-          console.error("Error submitting form:", error);
-          alert("❌ There was a problem submitting your form. Please try again.");
-        }
+        form.reset();
+        previewContainer.style.display = "none";
+        form.style.display = "none";
+        typeSelect.value = "";
+        message.style.display = "block";
       };
 
       reader.readAsDataURL(file);
