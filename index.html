@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>School Lost & Found Portal</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-
+  <title>School Lost, Found & Donation Portal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
+  
   <style>
     body {
       font-family: "Poppins", sans-serif;
-      background: linear-gradient(135deg, #89f7fe, #66a6ff);
+      background: linear-gradient(135deg, #a8edea, #fed6e3);
       display: flex;
       justify-content: center;
       align-items: center;
@@ -18,12 +18,12 @@
     }
 
     .container {
-      background: white;
+      background: #fff;
       padding: 30px;
-      border-radius: 20px;
+      border-radius: 25px;
+      box-shadow: 0 0 25px rgba(0,0,0,0.1);
       text-align: center;
-      width: 350px;
-      box-shadow: 0 0 25px rgba(0,0,0,0.15);
+      width: 380px;
       animation: fade 0.6s ease;
     }
 
@@ -44,10 +44,12 @@
       border-radius: 10px;
       border: 1px solid #ccc;
       font-family: "Poppins";
+      font-size: 14px;
+      outline: none;
     }
 
     button {
-      background: linear-gradient(90deg, #ff6a00, #ee0979);
+      background: linear-gradient(90deg, #43cea2, #185a9d);
       color: white;
       border: none;
       padding: 12px 20px;
@@ -58,7 +60,10 @@
       transition: 0.3s;
     }
 
-    button:hover { transform: scale(1.05); }
+    button:hover {
+      transform: scale(1.05);
+      background: linear-gradient(90deg, #36d1dc, #5b86e5);
+    }
 
     #message {
       display: none;
@@ -73,6 +78,7 @@
     #previewContainer {
       display: none;
       margin-top: 10px;
+      animation: fade 0.5s ease;
     }
 
     #previewImage {
@@ -80,59 +86,108 @@
       border-radius: 10px;
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
+
+    /* 🌿 Loading bar styles */
+    .loading-bar {
+      width: 90%;
+      height: 10px;
+      background-color: #e0e0e0;
+      border-radius: 5px;
+      margin: 15px auto 5px;
+      overflow: hidden;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+      position: relative;
+    }
+
+    .loading-bar.active {
+      opacity: 1;
+    }
+
+    .loading-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #00c853, #b2ff59);
+      border-radius: 5px;
+      transition: width 0.3s ease-in-out;
+    }
+
+    .loading-text {
+      font-size: 13px;
+      color: #2e7d32;
+      margin-top: 4px;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+
+    .loading-bar.fade-out,
+    .loading-text.fade-out {
+      opacity: 0;
+      transition: opacity 1s ease-out;
+    }
   </style>
 </head>
 
 <body>
   <div class="container">
-    <h1>🎒 Lost & Found + Donation</h1>
+    <h1>🎒 Lost, Found & Donate Portal</h1>
 
     <select id="submissionType" required>
-      <option value="">Select Type</option>
+      <option value="">Select Submission Type</option>
       <option value="Lost">Lost Item</option>
       <option value="Found">Found Item</option>
       <option value="Donation">Donate Item</option>
     </select>
 
     <form id="itemForm" style="display:none;">
-      <input type="text" id="itemName" placeholder="Item name" required>
+      <input type="text" id="itemName" placeholder="Name of the item" required />
       <textarea id="description" placeholder="Description" required></textarea>
-      <input type="text" id="finderName" placeholder="Your Name" required>
-      <input type="text" id="admissionNo" placeholder="Admission Number" required>
-      <input type="file" id="imageUpload" accept="image/*" required>
+      <input type="text" id="finderName" placeholder="Your Name" required />
+      <input type="text" id="admissionNo" placeholder="Admission Number" required />
+      <input type="file" id="imageUpload" accept="image/*" />
+      <p style="font-size: 12px; color: #666;">📸 (Optional) You can upload an image if available</p>
 
       <div id="previewContainer">
         <p><b>Image Preview:</b></p>
-        <img id="previewImage" src="" alt="Preview">
+        <img id="previewImage" src="" alt="Image Preview" />
       </div>
+
+      <!-- 🌿 Animated loading bar with text -->
+      <div class="loading-bar" id="loadingBar">
+        <div class="loading-bar-fill" id="loadingFill"></div>
+      </div>
+      <div class="loading-text" id="loadingText">Uploading...</div>
 
       <button type="submit">Submit</button>
     </form>
 
-    <div id="message">✅ Your item has been submitted successfully!</div>
+    <div id="message"></div>
   </div>
 
   <script>
     const form = document.getElementById("itemForm");
     const typeSelect = document.getElementById("submissionType");
     const message = document.getElementById("message");
-    const imageUpload = document.getElementById("imageUpload");
     const previewContainer = document.getElementById("previewContainer");
     const previewImage = document.getElementById("previewImage");
+    const imageUpload = document.getElementById("imageUpload");
+    const loadingBar = document.getElementById("loadingBar");
+    const loadingFill = document.getElementById("loadingFill");
+    const loadingText = document.getElementById("loadingText");
 
-    // 🔗 REPLACE with your Google Apps Script Web App URL
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxajgZfLouJZJwhrD2JDC5d6g8ROAW75QNRumXysSjKcN2a5Lcsq_G23B79ut7U1G1pMg/exec";
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyxQBYTB4QWgQiRuB85_CYGTCYFX1002EUQ0kEa_6IrDpJAvwz6zjG4boxPgzXvAtbaxA/exec";
 
     typeSelect.addEventListener("change", () => {
       form.style.display = typeSelect.value ? "block" : "none";
       message.style.display = "none";
+      previewContainer.style.display = "none";
     });
 
     imageUpload.addEventListener("change", () => {
       const file = imageUpload.files[0];
       if (file) {
         const reader = new FileReader();
-        reader.onload = e => {
+        reader.onload = (e) => {
           previewImage.src = e.target.result;
           previewContainer.style.display = "block";
         };
@@ -142,35 +197,86 @@
       }
     });
 
-    form.addEventListener("submit", e => {
+    form.addEventListener("submit", async (e) => {
       e.preventDefault();
       const file = imageUpload.files[0];
-      const reader = new FileReader();
 
-      reader.onloadend = async () => {
-        const data = {
-          type: typeSelect.value,
-          itemName: document.getElementById("itemName").value,
-          description: document.getElementById("description").value,
-          finderName: document.getElementById("finderName").value,
-          admissionNo: document.getElementById("admissionNo").value,
-          image: reader.result.split(",")[1]
+      loadingBar.classList.add("active");
+      loadingText.style.opacity = "1";
+      loadingText.textContent = "Processing...";
+      loadingFill.style.width = "0%";
+
+      let progress = 0;
+      const fakeProgress = setInterval(() => {
+        progress += 10;
+        loadingFill.style.width = `${progress}%`;
+        if (progress >= 100) clearInterval(fakeProgress);
+      }, 150);
+
+      const data = {
+        type: typeSelect.value,
+        itemName: document.getElementById("itemName").value,
+        description: document.getElementById("description").value,
+        finderName: document.getElementById("finderName").value,
+        admissionNo: document.getElementById("admissionNo").value,
+        image: ""
+      };
+
+      if (file) {
+        const reader = new FileReader();
+        reader.onloadend = async function () {
+          data.image = reader.result.split(",")[1];
+          await sendData(data);
         };
+        reader.readAsDataURL(file);
+      } else {
+        await sendData(data);
+      }
+    });
 
+    async function sendData(data) {
+      try {
         await fetch(WEB_APP_URL, {
           method: "POST",
           body: JSON.stringify(data)
         });
 
+        setTimeout(() => {
+          loadingFill.style.width = "100%";
+          loadingText.textContent = "Done!";
+        }, 500);
+
+        setTimeout(() => {
+          loadingBar.classList.add("fade-out");
+          loadingText.classList.add("fade-out");
+        }, 800);
+
+        setTimeout(() => {
+          loadingBar.classList.remove("active", "fade-out");
+          loadingText.classList.remove("fade-out");
+          loadingFill.style.width = "0%";
+          loadingText.style.opacity = "0";
+        }, 1500);
+
+        let msg = "✅ Your item has been noted. Check the store tomorrow!";
+        if (data.type === "Found") msg = "📦 Please return the item to the store tomorrow!";
+        else if (data.type === "Donation") msg = "💚 Thank you for donating!";
+
+        message.textContent = msg;
+        message.style.display = "block";
+
         form.reset();
         previewContainer.style.display = "none";
         form.style.display = "none";
         typeSelect.value = "";
-        message.style.display = "block";
-      };
 
-      reader.readAsDataURL(file);
-    });
+      } catch (error) {
+        alert("❌ There was a problem submitting your form. Please try again.");
+        console.error("Error:", error);
+        loadingBar.classList.remove("active");
+        loadingText.style.opacity = "0";
+      }
+    }
   </script>
 </body>
 </html>
